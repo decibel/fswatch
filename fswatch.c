@@ -27,9 +27,25 @@ void callback(
 { 
   pid_t pid;
   int   status;
-
+  char **a = malloc(sizeof(char*) * numEvents);
+  int *flags = malloc(sizeof(int) * numEvents);
+  int c = 0;
   for (int i=0; i<numEvents; ++i) {
-	printf("%x %s; ", eventFlags[i], ((char **)eventPaths)[i]);
+    int same = 0;
+	for (int j=0; j < c; ++j) {
+	  if (!strcmp(a[j], ((char **)eventPaths)[i])) {
+		same = 1;
+		printf("Found a dupe with %s\n", ((char **)eventPaths)[i]);
+	  }
+	}
+	if (!same) {
+	  a[c] = ((char **)eventPaths)[i];
+	  flags[c] = eventFlags[i];
+	  ++c;
+	}
+  }
+  for (int i=0; i<c; ++i) {
+	printf("%x %s; ", flags[i], a[i]);
   }
   printf("\n");
   fflush(stdout);
