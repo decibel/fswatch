@@ -29,7 +29,7 @@ void callback(
   int   status;
 
   for (int i=0; i<numEvents; ++i) {
-	printf("%x %s; ", eventFlags[i], ((char **)eventPaths)[i]);
+	printf("%x %s, ", eventFlags[i], ((char **)eventPaths)[i]);
   }
   printf("\n");
   fflush(stdout);
