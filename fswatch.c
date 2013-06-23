@@ -15,7 +15,12 @@
 
 extern char **environ;
 //the command to run
-
+int count_chars(const char* string, char ch)
+{
+    int count = 0;
+    for(; *string; count += (*string++ == ch));
+    return count;
+}
 // write out some info when there's any change in watched files
 void callback( 
     ConstFSEventStreamRef streamRef, 
@@ -29,7 +34,20 @@ void callback(
   int   status;
 
   for (int i=0; i<numEvents; ++i) {
-	printf("%x %s, ", eventFlags[i], ((char **)eventPaths)[i]);
+	const char* path = ((char **)eventPaths)[i];
+	int extra = count_chars(path, ' ');
+	if (extra) { // produce escaped spaces in the paths
+		char * z = malloc(strlen(path)+1+extra);
+		int cur = 0, zcur = 0;
+		while (*path) {
+			if (*path == ' ')
+				z[zcur++] = '\\';
+			z[zcur++] = path[cur++];
+		}
+		printf("%x %s, ", eventFlags[i], z);
+	} else {
+		printf("%x %s, ", eventFlags[i], path);
+	}
   }
   printf("\n");
   fflush(stdout);
