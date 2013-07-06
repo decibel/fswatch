@@ -30,8 +30,8 @@ void callback(
 	const FSEventStreamEventFlags eventFlags[],
 	const FSEventStreamEventId eventIds[])
 {
-  pid_t pid;
-  int   status;
+	pid_t pid;
+	int   status;
 
 	for (int i=0; i<numEvents; ++i) {
 		const char* path = ((char **)eventPaths)[i];
@@ -68,12 +68,12 @@ int main(int argc, char **argv) {
 	CFAbsoluteTime latency = 1.0;
 
 	stream = FSEventStreamCreate(NULL,
-	&callback,
-	callbackInfo,
-	pathsToWatch,
-	kFSEventStreamEventIdSinceNow,
-	latency,
-	kFSEventStreamCreateFlagFileEvents
+		&callback,
+		callbackInfo,
+		pathsToWatch,
+		kFSEventStreamEventIdSinceNow,
+		latency,
+		kFSEventStreamCreateFlagFileEvents
 	);
 
 	FSEventStreamScheduleWithRunLoop(stream, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode); 
