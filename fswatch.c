@@ -8,13 +8,16 @@
  *
  * usage: ./fswatch /some/directory[:/some/otherdirectory:...] [-r]
  *
- * r flag indicates that the returned paths should be direct relative paths. you 
- * should probably not use this when declaring multiple paths separated by 
- * colons, but you may if you want to. The behavior is currently only to convert 
- * the paths corresponding to the first item into relative paths.
+ * r flag indicates that the returned paths should be relative paths. NOTE that 
+ * the paths are relative to the cwd of fswatch itself, NOT relative to the 
+ * path(s) given as argument. Note also that the path is not anywhere close to 
+ * being an optimal relative path. If we produce any paths higher up in the tree
+ * than the cwd, they will be rendered as a full path because all we do is 
+ * directly substitute the cwd as './' (should not be a big deal as the usual 
+ * use case is just '.' for the dir to watch anyway)
  *
  * It is not clear how this would work for shortening multiple paths... maybe it
- * will produce output that looks like a/*, b/* etc. 
+ * will produce output that looks like a/.., b/.. etc. 
  *
  * compile me with something like: gcc fswatch.c -framework CoreServices -o fswatch
  *
@@ -28,19 +31,8 @@ static inline int count_chars(const char* string, char ch)
 	return count;
 }
 
-// todo: make into a general helper just like count_chars
-static inline int last_slash(const char* string) {
-	int i;
-	for(i=strlen(string)-1;i;--i) {
-		if (string[i] == '/') {
-			return i;
-		}
-	}
-	// the termination condition of the for loop (and the following return) 
-	// should be unnecessary since all paths have at least one slash, but I am 
-	// not about to inject a potential DoS vuln because of that logic either.
-	printf("wtf\n");
-	exit(1);
+// used for matching the path
+static inline int matchstart() {
 }
 
 // write out some info when there's any change in watched files
@@ -90,7 +82,7 @@ void callback_rel(
 	for (int i=0; i<numEvents; ++i) {
 		char* path = ((char **)eventPaths)[i];
 		// grab just the basename part
-		char* bn = path+last_slash(path)+1;
+		char* bn = path;
 		int extra = count_chars(bn, ' ');
 		if (extra) { // produce escaped spaces in the paths
 			char * z = malloc(strlen(bn)+1+extra);
@@ -111,6 +103,12 @@ void callback_rel(
 
 //set up fsevents and callback
 int main(int argc, char **argv) {
+	char cwd[1024];
+	if (getcwd(cwd, sizeof(cwd)) != NULL)
+		fprintf(stdout, "Current working dir: %s\n", cwd);
+	else
+		perror("getcwd() error");
+
 	if(argc != 2 && argc != 3) {
 		fprintf(stderr, "You must specify a directory to watch, you only gave %d args\n", argc);
 		exit(1);
