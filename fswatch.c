@@ -28,7 +28,7 @@ static inline int count_chars(const char* string, char ch)
 static inline int last_slash(const char* string) {
 	int i;
 	for(i=strlen(string)-1;i;--i) {
-		if (string[i] == '\\') {
+		if (string[i] == '/') {
 			return i;
 		}
 	}
@@ -36,7 +36,7 @@ static inline int last_slash(const char* string) {
 	// should be unnecessary since all paths have at least one slash, but I am 
 	// not about to inject a potential DoS vuln because of that logic either.
 	printf("wtf\n");
-	exit(-1);
+	exit(1);
 }
 
 // write out some info when there's any change in watched files
@@ -108,7 +108,7 @@ void callback_basename(
 //set up fsevents and callback
 int main(int argc, char **argv) {
 	if(argc != 2 && argc != 3) {
-		fprintf(stderr, "You must specify a directory to watch\n");
+		fprintf(stderr, "You must specify a directory to watch, you only gave %d args\n", argc);
 		exit(1);
 	}
 
