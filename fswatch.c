@@ -6,11 +6,15 @@
 
 /* fswatch.c
  *
- * usage: ./fswatch /some/directory[:/some/otherdirectory:...] [-bn]
+ * usage: ./fswatch /some/directory[:/some/otherdirectory:...] [-r]
  *
- * bn flag indicates that the returned paths should be direct relative paths. 
- * Obviously you should not use when declaring multiple paths separated by 
- * colons, ambiguities will arise.
+ * r flag indicates that the returned paths should be direct relative paths. you 
+ * should probably not use this when declaring multiple paths separated by 
+ * colons, but you may if you want to. The behavior is currently only to convert 
+ * the paths corresponding to the first item into relative paths.
+ *
+ * It is not clear how this would work for shortening multiple paths... maybe it
+ * will produce output that looks like a/*, b/* etc. 
  *
  * compile me with something like: gcc fswatch.c -framework CoreServices -o fswatch
  *
@@ -72,7 +76,7 @@ void callback(
 }
 
 // making code wet eliminates conditional check inside callback
-void callback_basename(
+void callback_rel(
 	ConstFSEventStreamRef streamRef,
 	void *clientCallBackInfo,
 	size_t numEvents,
@@ -112,10 +116,10 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	int basename = 0;
-	if (strncmp(argv[2], "-bn", 3) == 0) {
-		fprintf(stderr, "You have specified basename mode\n");
-		basename = 1;
+	int relative = 0;
+	if (strncmp(argv[2], "-r", 2) == 0) {
+		fprintf(stderr, "You have specified relative path mode\n");
+		relative = 1;
 	}
 
 	CFStringRef mypath = CFStringCreateWithCString(NULL, argv[1], kCFStringEncodingUTF8);
@@ -126,7 +130,7 @@ int main(int argc, char **argv) {
 	CFAbsoluteTime latency = 1.0;
 
 	stream = FSEventStreamCreate(NULL,
-		basename ? &callback_basename : &callback,
+		relative ? &callback_rel : &callback,
 		callbackInfo,
 		pathsToWatch,
 		kFSEventStreamEventIdSinceNow,
