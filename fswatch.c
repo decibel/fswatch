@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 #include <CoreServices/CoreServices.h> 
 
 /* fswatch.c
@@ -29,10 +30,6 @@ static inline int count_chars(const char* string, char ch)
 	int count = 0;
 	for(; *string; count += (*string++ == ch));
 	return count;
-}
-
-// used for matching the path
-static inline int matchstart() {
 }
 
 // write out some info when there's any change in watched files
@@ -67,6 +64,8 @@ void callback(
 	fflush(stdout);
 }
 
+char *cwd;
+int cwdlen;
 // making code wet eliminates conditional check inside callback
 void callback_rel(
 	ConstFSEventStreamRef streamRef,
@@ -81,20 +80,25 @@ void callback_rel(
 
 	for (int i=0; i<numEvents; ++i) {
 		char* path = ((char **)eventPaths)[i];
-		// grab just the basename part
-		char* bn = path;
-		int extra = count_chars(bn, ' ');
+		// grab just the part that comes after the path
+		char* dot = "";
+		char* rel_abs = path;
+		if (!strncmp(path, cwd, cwdlen)) {
+			dot = ".";
+			rel_abs = path + cwdlen;
+		}
+		int extra = count_chars(rel_abs, ' ');
 		if (extra) { // produce escaped spaces in the paths
-			char * z = malloc(strlen(bn)+1+extra);
+			char * z = malloc(strlen(rel_abs)+1+extra);
 			int cur = 0, zcur = 0;
-			while (bn[cur]) {
-				if (bn[cur] == ' ')
+			while (rel_abs[cur]) {
+				if (rel_abs[cur] == ' ')
 					z[zcur++] = '\\';
-				z[zcur++] = bn[cur++];
+				z[zcur++] = rel_abs[cur++];
 			}
-			printf("%x %s, ", eventFlags[i], z);
+			printf("%x %s%s, ", eventFlags[i], dot, z);
 		} else {
-			printf("%x %s, ", eventFlags[i], bn);
+			printf("%x %s%s, ", eventFlags[i], dot, rel_abs);
 		}
 	}
 	printf("\n");
@@ -103,15 +107,18 @@ void callback_rel(
 
 //set up fsevents and callback
 int main(int argc, char **argv) {
-	char cwd[1024];
-	if (getcwd(cwd, sizeof(cwd)) != NULL)
-		fprintf(stdout, "Current working dir: %s\n", cwd);
-	else
+	if ((cwd = getcwd(NULL, 0))) {
+		fprintf(stderr, "Current working dir: %s\n", cwd);
+		cwdlen = strlen(cwd);
+	}
+	else {
 		perror("getcwd() error");
+		return 2;
+	}
 
 	if(argc != 2 && argc != 3) {
 		fprintf(stderr, "You must specify a directory to watch, you only gave %d args\n", argc);
-		exit(1);
+		return 1;
 	}
 
 	int relative = 0;
