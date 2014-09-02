@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 	}
 
 	int relative = 0;
-	if (strncmp(argv[2], "-r", 2) == 0) {
+	if (argc == 3 && strncmp(argv[2], "-r", 2) == 0) {
 		fprintf(stderr, "You have specified relative path mode\n");
 		relative = 1;
 	}
